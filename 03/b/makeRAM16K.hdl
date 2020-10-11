@@ -10,7 +10,7 @@
  * (the loaded value will be emitted to out from the next time step onward).
  */
 
-CHIP RAM16K {
+CHIP makeRAM16K { // builtIn版を使う
     IN in[16], load, address[14];
     OUT out[16];
 
