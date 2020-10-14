@@ -17,14 +17,17 @@ class Parser {
   ifstream *ifs;
   bool init;
   char cType[4];
-  string get_command(string str) { 
+  
+  string get_command(string str) {
     string word = "";
-    for (auto x : str){
-        if (x == ' ') {
-          if (word=="//") break;
-          return word;
+    for (int i=0; i<str.size(); i++) {
+        int d = int(str[i]);
+        if (d==47) { // /のこと
+          if (i<str.size()-1 && str[i+1]==47) break;
         }
-        else word = word + x;
+        if (d==13) return word;
+        if (d==32) continue;
+        word = word + str[i];
     }
     return word;
   }
@@ -48,12 +51,11 @@ class Parser {
     getline(*ifs, buf);
     currentCommand = buf;
     commandWord = get_command(currentCommand);
-    commandWord = commandWord.substr(0, commandWord.size()-1); // 最後空文字あるので
     init = false;
   }
   char commandType() {
     int ctype;
-    if (commandWord.size()<=1 || commandWord[0] == '/') ctype=3;
+    if (commandWord.size()==0) ctype=3;
     else if (commandWord[0] == '(') ctype=2;
     else if (commandWord[0]=='@') ctype=0;
     else ctype=1;
@@ -152,15 +154,23 @@ class Code {
 
 class SymbolTable {
   unordered_map<string, int> table;
+
   public:
+    SymbolTable() {
+      table["SP"] = 0;table["LCL"] = 1;table["ARG"] = 2;
+      table["THIS"] = 3;table["THAT"] = 4;
+      table["R0"] = 0;table["R1"] = 1;table["R2"] = 2;table["R3"] = 3;
+      table["R4"] = 4;table["R5"] = 5;table["R6"] = 6;table["R7"] = 7;
+      table["R8"] = 8;table["R9"] = 9;table["R10"] = 10;table["R11"] = 11;
+      table["R12"] = 12;table["R13"] = 13;table["R14"] = 14;table["R15"] = 15;
+      table["SCREEN"] = 16384;table["KBD"] = 24576;
+    }
     void addEntry(string symbol, int address) {
       table[symbol] = address;
     }
-
     bool contains(string symbol) {
-      return table[symbol] > 0;
+      return symbol=="SP" || symbol=="R0" || table[symbol] > 0;
     }
-
     int getAddress(string symbol) {
       return table[symbol];
     }
@@ -170,10 +180,22 @@ int string_to_int(string str) {
   int digit=0;
   int ret = 0;
   for (int i=str.size()-1; i>=0; i--) {
-    ret+=(str[i]-'0')*pow(10, digit);
+    int x = str[i]-'0';
+    if (x>=10) return -1;
+    ret+=x*pow(10, digit);
     digit++;
   }
   return ret;
+}
+
+string get_output_file_name(string file_name) {
+  string output_file_name;
+  for (char c: file_name) { 
+    output_file_name+=c;
+    if (c=='.') break;
+  }
+  output_file_name+="hack";
+  return output_file_name;
 }
 
 int main(int argc, char* argv[]) {
@@ -183,36 +205,61 @@ int main(int argc, char* argv[]) {
     cerr << "Error: file not opened." << endl;
     return 1;
   }
-  Parser parse(&ifs);
-  Code C = Code();
-  // SymbolTable ST = SymbolTable();
-  string output_file_name;
-  for (char c: file_name) { 
-    output_file_name+=c;
-    if (c=='.') break;
+
+
+  Parser firstParse(&ifs);
+  SymbolTable ST = SymbolTable();
+  int idx=0;
+
+  while(firstParse.hasMoreCommand()) {
+    firstParse.advance();
+    char ctype = firstParse.commandType();
+    if (ctype=='L') {
+      string symbol = firstParse.symbol();
+      if (!ST.contains(symbol)) ST.addEntry(symbol, idx);
+    }
+    if (ctype=='A' || ctype=='C') idx++;
   }
-  output_file_name+="hack";
+
+
+
+
+  ifstream ifs2(file_name, ios::in);
+  Parser secondParse(&ifs2);
+  Code C = Code();
+  string output_file_name = get_output_file_name(file_name);
   ofstream outputfile(output_file_name);
-  while(parse.hasMoreCommand()) {
-    parse.advance();
-    char ctype = parse.commandType();
+  int registerIdx = 16;
+  while(secondParse.hasMoreCommand()) {
+    secondParse.advance();
+    char ctype = secondParse.commandType();
     switch(ctype) {
       case 'C': {
-        string d = parse.dest();
-        string c = parse.comp();
-        string j = parse.jump();
+        string d = secondParse.dest();
+        string c = secondParse.comp();
+        string j = secondParse.jump();
         bit3 dest = C.dest(d);
         bit7 comp = C.comp(c);
         bit3 jump = C.jump(j);
+        // cout << 111 << comp << dest << jump << "\n";
         outputfile << 111 << comp << dest << jump << "\n";
         break;
       }
-      case 'A':
-      case 'L': {
-        string ps = parse.symbol();
-        bitset<15> b(string_to_int(ps));
-        //　取りあえすシンボルなし。10進数のみ
+      case 'A': {
+        string ps = secondParse.symbol();
+        int d = string_to_int(ps);
+        if (d<0) {
+          if (ST.contains(ps)) d = ST.getAddress(ps);
+          else {
+            ST.addEntry(ps, registerIdx);
+            d = registerIdx;
+            registerIdx++;
+          }
+        }
+        bitset<15> b(d);
+        // cout << 0 << b << "\n";
         outputfile << 0 << b << "\n";
+        break;
       }
     }
   }
