@@ -1,9 +1,8 @@
-#include <iostream>
+#ifndef SYMBOL_TABLE_HPP
+#define SYMBOL_TABLE_HPP
+
 #include <string>
-#include <bitset>
 #include <unordered_map>
-#include <fstream>
-#include <cmath>
 using namespace std;
 
 class SymbolTable {
@@ -36,3 +35,4 @@ inline int SymbolTable::getAddress(string symbol) {
   return table[symbol];
 }
 
+#endif // SYMBOL_TABLE_HPP

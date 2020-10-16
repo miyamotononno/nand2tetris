@@ -1,10 +1,6 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <cmath>
-#include <stdio.h>
-#include <string.h>
-#include <vector>
 #include <regex>
 #include "parser.hpp"
 using namespace std;

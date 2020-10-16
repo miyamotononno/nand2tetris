@@ -1,17 +1,13 @@
 #include <iostream>
 #include <string>
 #include <bitset>
-#include <unordered_map>
 #include <fstream>
-#include <cmath>
-#include <stdio.h> 
-#include <string.h> 
-#include <vector>
 #include <regex>
 #include "parser.hpp"
 #include "code.hpp"
 #include "symbol_table.hpp"
 using namespace std;
+
 const int COMMAND_A_TYPE = 1;
 const int COMMAND_C_TYPE = 2;
 const int COMMAND_L_TYPE = 3;
