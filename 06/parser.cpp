@@ -1,63 +1,59 @@
+#include <iostream>
 #include <string>
 #include <fstream>
 #include <cmath>
+#include <stdio.h>
+#include <string.h>
 #include <vector>
+#include <regex>
 #include "parser.hpp"
 using namespace std;
+char SYMBOL_PATTERN[] = "([0-9a-zA-Z_\.\$:]+)";
 
-string Parser::get_command(string str) {
-  string word = "";
-  for (int i=0; i<str.size(); i++) {
-      int d = int(str[i]);
-      if (d==47) { // /のこと
-        if (i<str.size()-1 && str[i+1]==47) break;
-      }
-      if (d==13) return word;
-      if (d==32) continue;
-      word = word + str[i];
-  }
-  return word;
-}
-
-Parser::Parser(ifstream *file) { // pointerで渡す
+Parser::Parser(ifstream *file, int A_TYPE, int C_TYPE, int L_TYPE) { // pointerで渡す
     ifs = file;
-    cType[0] = 'A';
-    cType[1] = 'C';
-    cType[2] = 'L';
-    cType[3] = 'N';
     init=true;
+    COMMAND_A_TYPE=A_TYPE;
+    COMMAND_C_TYPE=C_TYPE;
+    COMMAND_L_TYPE=L_TYPE;
+    sprintf(A_COMMAND_PATTERN, "@%s", SYMBOL_PATTERN);
+    sprintf(L_COMMAND_PATTERN, "[(]%s[)]", SYMBOL_PATTERN);
 }
 
-bool Parser::hasMoreCommand() {
-  return init || currentCommand.size()>0;
-}
-
-void Parser::advance() {
+bool Parser::advance() {
   string buf;
-  getline(*ifs, buf);
-  currentCommand = buf;
-  commandWord = get_command(currentCommand);
-  init = false;
+  if (getline(*ifs, buf)) {
+    moreCommand = true;
+    const string commentout("//");
+    string::size_type pos = buf.find(commentout);
+    if (pos!=string::npos) buf = buf.substr(0, pos);
+    buf=regex_replace(buf, regex("[ \t\f\r\n]"), "");
+    command = buf;
+    init = false;
+  } else moreCommand = false;
+  return moreCommand;
 }
 
-char Parser::commandType(){
-  int ctype;
-  if (commandWord.size()==0) ctype=3;
-  else if (commandWord[0] == '(') ctype=2;
-  else if (commandWord[0]=='@') ctype=0;
-  else ctype=1;
-  return cType[ctype];
+// 正規表現に直すこと
+
+int Parser::commandType(){
+  if (command.size()==0) return 0;
+  if (regex_match(command, regex(A_COMMAND_PATTERN))) return COMMAND_A_TYPE;
+  if (regex_match(command, regex(L_COMMAND_PATTERN))) return COMMAND_L_TYPE;
+  return COMMAND_C_TYPE;
 }
 
 string Parser::symbol() {
-  char ct = commandType();
-  if (ct=='A') return commandWord.substr(1);
-  else return commandWord.substr(1, commandWord.size()-2); // L
+  int ct = commandType();
+  if (ct==COMMAND_A_TYPE) command=command.substr(1);
+  else if (ct==COMMAND_L_TYPE) command=command.substr(1, command.find(')')-1);
+  else cerr << "AコマンドでもLコマンドでもない" << endl;
+  return command;
 }
 
 string Parser::dest() {
   string ret = "";
-  for (char c: commandWord) {
+  for (char c: command) {
     if (c=='=') {
       break;
     } else if (c==';') return ""; // destは存在しない
@@ -68,7 +64,7 @@ string Parser::dest() {
 
 string Parser::comp() {
   string ret = "";
-  for (char c: commandWord) {
+  for (char c: command) {
     if (c==';') return ret;  
     else if (c=='=') {
       ret="";
@@ -82,7 +78,7 @@ string Parser::comp() {
 string Parser::jump() {
   string ret = "";
   bool ok = false;
-  for (char c: commandWord) {
+  for (char c: command) {
     if (c==';') {
       ok=true;
       continue;

@@ -1,5 +1,7 @@
 *.cmp
 *.tst
 *.out
+*.gch
+.vscode/
 00/
 demo/

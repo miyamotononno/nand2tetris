@@ -7,45 +7,15 @@
 #include <stdio.h> 
 #include <string.h> 
 #include <vector>
+#include <regex>
 #include "parser.hpp"
 #include "code.hpp"
+#include "symbol_table.hpp"
 using namespace std;
-
-class SymbolTable {
-  unordered_map<string, int> table;
-
-  public:
-    SymbolTable() {
-      table["SP"] = 0;table["LCL"] = 1;table["ARG"] = 2;
-      table["THIS"] = 3;table["THAT"] = 4;
-      table["R0"] = 0;table["R1"] = 1;table["R2"] = 2;table["R3"] = 3;
-      table["R4"] = 4;table["R5"] = 5;table["R6"] = 6;table["R7"] = 7;
-      table["R8"] = 8;table["R9"] = 9;table["R10"] = 10;table["R11"] = 11;
-      table["R12"] = 12;table["R13"] = 13;table["R14"] = 14;table["R15"] = 15;
-      table["SCREEN"] = 16384;table["KBD"] = 24576;
-    }
-    void addEntry(string symbol, int address) {
-      table[symbol] = address;
-    }
-    bool contains(string symbol) {
-      return symbol=="SP" || symbol=="R0" || table[symbol] > 0;
-    }
-    int getAddress(string symbol) {
-      return table[symbol];
-    }
-};
-
-int string_to_int(string str) {
-  int digit=0;
-  int ret = 0;
-  for (int i=str.size()-1; i>=0; i--) {
-    int x = str[i]-'0';
-    if (x>=10) return -1;
-    ret+=x*pow(10, digit);
-    digit++;
-  }
-  return ret;
-}
+const int COMMAND_A_TYPE = 1;
+const int COMMAND_C_TYPE = 2;
+const int COMMAND_L_TYPE = 3;
+char INTEGER_PATTERN[] = "[0-9]+";
 
 string get_output_file_name(string file_name) {
   string output_file_name;
@@ -70,17 +40,14 @@ int main(int argc, char* argv[]) {
   SymbolTable ST = SymbolTable();
   int idx=0;
 
-  while(firstParse.hasMoreCommand()) {
-    firstParse.advance();
-    char ctype = firstParse.commandType();
-    if (ctype=='L') {
+  while(firstParse.advance()) {
+    int ctype = firstParse.commandType();
+    if (ctype==COMMAND_L_TYPE) {
       string symbol = firstParse.symbol();
       if (!ST.contains(symbol)) ST.addEntry(symbol, idx);
     }
-    if (ctype=='A' || ctype=='C') idx++;
+    if (ctype==COMMAND_A_TYPE || ctype==COMMAND_C_TYPE) idx++;
   }
-
-
 
 
   ifstream ifs2(file_name, ios::in);
@@ -89,11 +56,10 @@ int main(int argc, char* argv[]) {
   string output_file_name = get_output_file_name(file_name);
   ofstream outputfile(output_file_name);
   int registerIdx = 16;
-  while(secondParse.hasMoreCommand()) {
-    secondParse.advance();
-    char ctype = secondParse.commandType();
+  while(secondParse.advance()) {
+    int ctype = secondParse.commandType();
     switch(ctype) {
-      case 'C': {
+      case COMMAND_C_TYPE: {
         string d = secondParse.dest();
         string c = secondParse.comp();
         string j = secondParse.jump();
@@ -104,10 +70,11 @@ int main(int argc, char* argv[]) {
         outputfile << 111 << comp << dest << jump << "\n";
         break;
       }
-      case 'A': {
+      case COMMAND_A_TYPE: {
         string ps = secondParse.symbol();
-        int d = string_to_int(ps);
-        if (d<0) {
+        int d=0;
+        if (regex_match(ps, regex(INTEGER_PATTERN))) d = stoi(ps);
+        else {
           if (ST.contains(ps)) d = ST.getAddress(ps);
           else {
             ST.addEntry(ps, registerIdx);
