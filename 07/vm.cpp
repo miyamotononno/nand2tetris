@@ -1,20 +1,12 @@
 #include <iostream>
 #include <string>
-#include <bitset>
 #include <fstream>
-#include <regex>
+#include <filesystem>
 #include "parser.hpp"
+#include "code_writer.hpp"
+#include "constants.hpp"
 using namespace std;
-
-const int C_ARITHMETIC=1;
-const int C_PUSH=2;
-const int C_POP=3;
-const int C_LABEL=4;
-const int C_GOTO=5;
-const int C_IF=6;
-const int C_FUNCTION=7;
-const int C_RETURN=9;
-const int C_CALL=10;
+namespace fs = std::filesystem;
 
 string get_output_file_name(string file_name) {
   string output_file_name;
@@ -33,15 +25,21 @@ int main(int argc, char* argv[]) {
     cerr << "Error: file not opened." << "\n";
     return 1;
   }
+  string output_file_name = get_output_file_name(file_name);
+  ifstream ofs(output_file_name, ios::in);
+  if(ofs) fs::remove(output_file_name);
+  CodeWriter Cw(output_file_name);
   Parser Parser(&ifs);
   while(Parser.advance()) {
     int cType = Parser.commandType();
-    if (cType != C_RETURN) {
-      cout << "arg1:" << ' ' << Parser.arg1() << "\n";
-      if (cType==C_PUSH || cType==C_POP ||
-          cType==C_FUNCTION || cType==C_CALL) {
-            cout<< "arg2:" << ' ' << Parser.arg2() << "\n";
-          }
+    if (cType == C_RETURN) continue; 
+    if (cType == C_ARITHMETIC) {
+      string command = Parser.arg1();
+      Cw.writeArithmetic(command);
+    } else if (cType==C_POP || cType==C_PUSH) {
+      string segment = Parser.arg1();
+      int index = Parser.arg2();
+      Cw.writePushPop(cType, segment, index);
     }
   }
   return 0;

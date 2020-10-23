@@ -3,24 +3,11 @@
 #include <fstream>
 #include <regex>
 #include "parser.hpp"
+#include "constants.hpp"
 using namespace std;
 
-Parser::Parser(ifstream *file, int _C_ARITHMETIC, int _C_PUSH,
-               int _C_POP, int _C_LABEL, int _C_GOTO, int _C_IF,
-               int _C_FUNCTION, int _C_RETURN, int _C_CALL) {
+Parser::Parser(ifstream *file) {
   ifs = file;
-  C_ARITHMETIC=_C_ARITHMETIC;
-  C_PUSH=_C_PUSH;
-  C_POP=_C_POP;
-  C_LABEL=_C_LABEL;
-  C_GOTO=_C_GOTO;
-  C_IF=_C_IF;
-  C_FUNCTION=_C_FUNCTION;
-  C_RETURN=_C_RETURN;
-  C_CALL=_C_CALL;
-  args[0]="";
-  args[1]="";
-  args[2]="";
 }
 
 void Parser::split_command(string &command) {
@@ -38,7 +25,7 @@ void Parser::split_command(string &command) {
     }
     com+=c;
   }
-  args[idx] = com;
+  args[idx] = regex_replace(com, regex("[ \t\f\r\n]"), "");
 }
 
 bool Parser::advance() {
