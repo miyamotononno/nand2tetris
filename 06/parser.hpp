@@ -6,10 +6,8 @@
 using namespace std;
 
 class Parser {
-  bool moreCommand;
   string command;
   ifstream *ifs;
-  bool init;
   int COMMAND_A_TYPE;
   int COMMAND_C_TYPE;
   int COMMAND_L_TYPE;

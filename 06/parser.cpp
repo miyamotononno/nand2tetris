@@ -7,17 +7,17 @@ using namespace std;
 char SYMBOL_PATTERN[] = "([0-9a-zA-Z_\.\$:]+)";
 
 Parser::Parser(ifstream *file, int A_TYPE, int C_TYPE, int L_TYPE) { // pointerで渡す
-    ifs = file;
-    init=true;
-    COMMAND_A_TYPE=A_TYPE;
-    COMMAND_C_TYPE=C_TYPE;
-    COMMAND_L_TYPE=L_TYPE;
-    sprintf(A_COMMAND_PATTERN, "@%s", SYMBOL_PATTERN);
-    sprintf(L_COMMAND_PATTERN, "[(]%s[)]", SYMBOL_PATTERN);
+  ifs = file;
+  COMMAND_A_TYPE=A_TYPE;
+  COMMAND_C_TYPE=C_TYPE;
+  COMMAND_L_TYPE=L_TYPE;
+  sprintf(A_COMMAND_PATTERN, "@%s", SYMBOL_PATTERN);
+  sprintf(L_COMMAND_PATTERN, "[(]%s[)]", SYMBOL_PATTERN);
 }
 
 bool Parser::advance() {
   string buf;
+  bool moreCommand=false;
   if (getline(*ifs, buf)) {
     moreCommand = true;
     const string commentout("//");
@@ -25,8 +25,7 @@ bool Parser::advance() {
     if (pos!=string::npos) buf = buf.substr(0, pos);
     buf=regex_replace(buf, regex("[ \t\f\r\n]"), "");
     command = buf;
-    init = false;
-  } else moreCommand = false;
+  }
   return moreCommand;
 }
 
