@@ -9,13 +9,12 @@ using namespace std;
 namespace fs = std::filesystem;
 
 string get_output_file_name(string file_name) {
-  string output_file_name;
-  for (char c: file_name) { 
-    output_file_name+=c;
+  string vmFile;
+  for (char c: file_name) {
     if (c=='.') break;
+    vmFile+=c;
   }
-  output_file_name+="asm";
-  return output_file_name;
+  return vmFile;
 }
 
 int main(int argc, char* argv[]) {
@@ -25,10 +24,12 @@ int main(int argc, char* argv[]) {
     cerr << "Error: file not opened." << "\n";
     return 1;
   }
-  string output_file_name = get_output_file_name(file_name);
+  string vmFileName = get_output_file_name(file_name);
+  string output_file_name = vmFileName + ".asm";
   ifstream ofs(output_file_name, ios::in);
   if(ofs) fs::remove(output_file_name);
   CodeWriter Cw(output_file_name);
+  Cw.setFileName(vmFileName);
   Parser Parser(&ifs);
   while(Parser.advance()) {
     int cType = Parser.commandType();

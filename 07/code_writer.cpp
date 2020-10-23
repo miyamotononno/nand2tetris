@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <utility>
 #include <stdarg.h>
 #include "code_writer.hpp"
@@ -72,13 +73,81 @@ void CodeWriter::writeCompOperation(string command){
   push();
 }
 
-void CodeWriter::writePopFromDedicatedSegment(string command) {
-  string dedicated_segement;
-  if (command == "local") dedicated_segement = "@LCL";
-  else if (command == "argument") dedicated_segement = "@ARG";
-  else if (command == "this") dedicated_segement = "@THIS";
-  else if (command == "that") dedicated_segement = "@THAT";
+void CodeWriter::writePushPop(int command, string segment, int index){
+  if (command == C_PUSH && segment=="constant") {
+    char cs[20];
+    sprintf(cs, "@%d", index);
+    writeToFile(cs, "D=A");
+    push();
+  }
   
+  if (segment=="local" || segment=="argument" || segment=="this" || segment=="that") {
+    string dedicatedSegement;
+    if (segment == "local") dedicatedSegement = "@LCL";
+    else if (segment == "argument") dedicatedSegement = "@ARG";
+    else if (segment == "this") dedicatedSegement = "@THIS";
+    else dedicatedSegement = "@THAT";
+    if (command==C_PUSH) writePushFromDedicatedSegment(dedicatedSegement, index);
+    else writePopToDedicatedSegment(dedicatedSegement, index);
+  }
+
+  if (segment == "pointer" || segment == "temp") {
+    int address = segment == "pointer" ? POINTER_SEGMENT: TEMP_SEGEMENT;
+    char cs[20];
+    sprintf(cs, "@%d", address);
+    if (command == C_PUSH) {
+      writeToFile(cs);
+      for (int i=0; i<index; i++) writeToFile("A=A+1");
+      writeToFile("D=M");
+      push();
+    } else {
+      pop();
+      writeToFile("D=M", cs);
+      for (int i=0; i<index; i++) writeToFile("A=A+1");
+      writeToFile("M=D");
+    }
+  }
+
+  if (segment == "static") {
+    char cs[40];
+    const char* cstr = vmFileName.c_str();
+    sprintf(cs, "@%s.%d", cstr, index);
+    if (command==C_PUSH) {
+      writeToFile(cs, "D=M");
+      push();
+    }
+    else {
+      pop();
+      writeToFile("D=M", cs, "M=D");
+    }
+
+  }
+}
+
+void CodeWriter::setFileName(string vmFilePath) {
+  string r="";
+  for (int i=vmFilePath.size()-1; i>=0; i--) {
+    if (vmFilePath[i]=='/') break;
+    r+=vmFilePath[i];
+  }
+  reverse(r.begin(), r.end());
+  vmFileName = r;
+}
+
+void CodeWriter::writePopToDedicatedSegment(string segment, int index) {
+  // POPしたものを M[segment+index]に格納
+  pop();
+  writeToFile("D=M", segment, "A=M");
+  for (int i=0; i<index; i++) writeToFile("A=A+1");
+  writeToFile("M=D");
+}
+
+void CodeWriter::writePushFromDedicatedSegment(string segment, int index) {
+  // M[segment+index]のアドレスに格納されてる値をpushする
+  writeToFile(segment, "A=M");
+  for (int i=0; i<index; i++) writeToFile("A=A+1");
+  writeToFile("D=M");
+  push();
 }
 
 void CodeWriter::writeToFile(){};
@@ -88,24 +157,10 @@ void CodeWriter::writeToFile(Head&& head, Tail&&... tail) {
   writeToFile(forward<Tail>(tail)...);
 }
 
-void CodeWriter::pop() { // popしてそれを現在メモリが指すものをAレジスタが保持する?
+void CodeWriter::pop() { // popしてそれを現在メモリが指すものをAレジスタが保持する
   writeToFile("@SP", "M=M-1", "A=M");
 }
 
 void CodeWriter::push() { // データレジスタからstackにpush
   writeToFile("@SP", "A=M", "M=D", "@SP", "M=M+1");
-}
-void CodeWriter::writePushPop(int command, string segment, int index){
-  int mId;
-  if (command == C_PUSH) {
-    if (segment=="constant") {
-        char cs[20];
-        sprintf(cs, "@%d", index);
-        writeToFile(cs, "D=A");
-        push();
-    }
-  }
-  if (command == C_POP) {
-    return;
-  }
 }
