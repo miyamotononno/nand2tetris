@@ -9,6 +9,9 @@
 #include "constants.hpp"
 using namespace std;
 
+const int POINTER_SEGMENT = 3;
+const int TEMP_SEGEMENT = 5;
+
 void CodeWriter::writeArithmetic(string command){
   if (command=="add" || command=="sub" || command=="and" || command=="or") {
     writeBinaryOperation(command);
@@ -28,6 +31,12 @@ label CodeWriter::getNewLabel() {
   sprintf(l2, "(LABEL%d)", label_num);
   label ret = {l1, l2};
   return ret;
+}
+
+string CodeWriter::getAOperationFromAddress(int address, int bufSize) {
+  char oper[bufSize];
+  sprintf(oper, "@%d", address);
+  return oper;
 }
 
 void CodeWriter::writeBinaryOperation(string command){
@@ -75,8 +84,7 @@ void CodeWriter::writeCompOperation(string command){
 
 void CodeWriter::writePushPop(int command, string segment, int index){
   if (command == C_PUSH && segment=="constant") {
-    char cs[20];
-    sprintf(cs, "@%d", index);
+    string cs = getAOperationFromAddress(index);
     writeToFile(cs, "D=A");
     push();
   }
@@ -87,14 +95,24 @@ void CodeWriter::writePushPop(int command, string segment, int index){
     else if (segment == "argument") dedicatedSegement = "@ARG";
     else if (segment == "this") dedicatedSegement = "@THIS";
     else dedicatedSegement = "@THAT";
-    if (command==C_PUSH) writePushFromDedicatedSegment(dedicatedSegement, index);
-    else writePopToDedicatedSegment(dedicatedSegement, index);
+    if (command==C_PUSH) {
+      // M[segment+index]のアドレスに格納されてる値をpushする
+      writeToFile(dedicatedSegement, "A=M");
+      for (int i=0; i<index; i++) writeToFile("A=A+1");
+      writeToFile("D=M");
+      push();
+    } else {
+      // POPしたものを M[segment+index]に格納
+      pop();
+      writeToFile("D=M", dedicatedSegement, "A=M");
+      for (int i=0; i<index; i++) writeToFile("A=A+1");
+      writeToFile("M=D");
+    }
   }
 
   if (segment == "pointer" || segment == "temp") {
     int address = segment == "pointer" ? POINTER_SEGMENT: TEMP_SEGEMENT;
-    char cs[20];
-    sprintf(cs, "@%d", address);
+    string cs = getAOperationFromAddress(address);
     if (command == C_PUSH) {
       writeToFile(cs);
       for (int i=0; i<index; i++) writeToFile("A=A+1");
@@ -132,22 +150,6 @@ void CodeWriter::setFileName(string vmFilePath) {
   }
   reverse(r.begin(), r.end());
   vmFileName = r;
-}
-
-void CodeWriter::writePopToDedicatedSegment(string segment, int index) {
-  // POPしたものを M[segment+index]に格納
-  pop();
-  writeToFile("D=M", segment, "A=M");
-  for (int i=0; i<index; i++) writeToFile("A=A+1");
-  writeToFile("M=D");
-}
-
-void CodeWriter::writePushFromDedicatedSegment(string segment, int index) {
-  // M[segment+index]のアドレスに格納されてる値をpushする
-  writeToFile(segment, "A=M");
-  for (int i=0; i<index; i++) writeToFile("A=A+1");
-  writeToFile("D=M");
-  push();
 }
 
 void CodeWriter::writeToFile(){};

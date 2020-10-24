@@ -18,14 +18,14 @@ class CodeWriter {
     void writeToFile();
     template <class Head, class... Tail>
     void writeToFile(Head&& head, Tail&&... tail);
+
     void writeBinaryOperation(string command);
-    void writeUnaryOperation(string command); // 単項演算
+    void writeUnaryOperation(string command);
     void writeCompOperation(string command);
-    void writePopToDedicatedSegment(string segment, int index);
-    void writePushFromDedicatedSegment(string segment, int index);
     void pop();
     void push();
     label getNewLabel();
+    string getAOperationFromAddress(int address, int bufSize=20);
   public:
     CodeWriter(string fileName): outputfile(fileName, ofstream::app){}
     void setFileName(string vmFileName);

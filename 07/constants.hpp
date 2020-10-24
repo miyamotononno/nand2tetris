@@ -12,7 +12,4 @@ const int C_FUNCTION=7;
 const int C_RETURN=9;
 const int C_CALL=10;
 
-const int POINTER_SEGMENT = 3;
-const int TEMP_SEGEMENT = 5;
-
 #endif // CONSTANTS_HPP
