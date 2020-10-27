@@ -12,6 +12,64 @@ using namespace std;
 const int POINTER_SEGMENT = 3;
 const int TEMP_SEGEMENT = 5;
 
+void CodeWriter::writeToFile(){};
+template <class Head, class... Tail>
+void CodeWriter::writeToFile(Head&& head, Tail&&... tail) {
+  outputfile << head << "\n";
+  writeToFile(forward<Tail>(tail)...);
+}
+
+void CodeWriter::pop() { // popしてそれを現在メモリが指すものをAレジスタが保持する
+  writeToFile("@SP", "M=M-1", "A=M");
+}
+
+void CodeWriter::push() { // データレジスタからstackにpush
+  writeToFile("@SP", "A=M", "M=D", "@SP", "M=M+1");
+}
+
+string CodeWriter::getAOperation(int address, int bufSize) {
+  char oper[bufSize];
+  sprintf(oper, "@%d", address);
+  return oper;
+}
+
+string CodeWriter::getAOperation(string label, int bufSize) {
+  char oper[bufSize];
+  const char* _label = label.c_str();
+  sprintf(oper, "@%s", _label);
+  return oper;
+}
+
+string CodeWriter::getLabelInFunction(string label) { // GOTOもしくはIFの中
+  char cs[60];
+  const char* funcName = currentFunctionName.c_str();
+  const char* labelName = label.c_str();
+  sprintf(cs, "%s$%s", funcName, labelName);
+  return cs;
+}
+
+string CodeWriter::getLOperation(string label, int bufSize) {
+  char oper[bufSize];
+  const char* _label = label.c_str();
+  sprintf(oper, "(%s)", _label);
+  return oper;
+}
+
+label CodeWriter::getNewLabel(bool IsReturnLabel) {
+  char l1[20], l2[20];
+  if (IsReturnLabel) {
+    returnLabelNum += 1;
+    sprintf(l1, "@_RETURN_LABEL_%d", returnLabelNum);
+    sprintf(l2, "(_RETURN_LABEL_%d)", returnLabelNum);
+  } else {
+    labelNum += 1;
+    sprintf(l1, "@_IF_LABEL_%d", labelNum);
+    sprintf(l2, "(_IF_LABEL_%d)", labelNum);
+  }
+  label ret = {l1, l2};
+  return ret;
+}
+
 void CodeWriter::writeArithmetic(string command){
   if (command=="add" || command=="sub" || command=="and" || command=="or") {
     writeBinaryOperation(command);
@@ -22,21 +80,6 @@ void CodeWriter::writeArithmetic(string command){
   if (command=="eq" || command=="gt" || command=="lt") {
     writeCompOperation(command);
   }
-}
-
-label CodeWriter::getNewLabel() {
-  label_num += 1;
-  char l1[20], l2[20];
-  sprintf(l1, "@LABEL%d", label_num);
-  sprintf(l2, "(LABEL%d)", label_num);
-  label ret = {l1, l2};
-  return ret;
-}
-
-string CodeWriter::getAOperationFromAddress(int address, int bufSize) {
-  char oper[bufSize];
-  sprintf(oper, "@%d", address);
-  return oper;
 }
 
 void CodeWriter::writeBinaryOperation(string command){
@@ -84,7 +127,7 @@ void CodeWriter::writeCompOperation(string command){
 
 void CodeWriter::writePushPop(int command, string segment, int index){
   if (command == C_PUSH && segment=="constant") {
-    string cs = getAOperationFromAddress(index);
+    string cs = getAOperation(index);
     writeToFile(cs, "D=A");
     push();
   }
@@ -112,7 +155,7 @@ void CodeWriter::writePushPop(int command, string segment, int index){
 
   if (segment == "pointer" || segment == "temp") {
     int address = segment == "pointer" ? POINTER_SEGMENT: TEMP_SEGEMENT;
-    string cs = getAOperationFromAddress(address);
+    string cs = getAOperation(address);
     if (command == C_PUSH) {
       writeToFile(cs);
       for (int i=0; i<index; i++) writeToFile("A=A+1");
@@ -152,39 +195,64 @@ void CodeWriter::setFileName(string vmFilePath) {
   vmFileName = r;
 }
 
-void CodeWriter::writeToFile(){};
-template <class Head, class... Tail>
-void CodeWriter::writeToFile(Head&& head, Tail&&... tail) {
-  outputfile << head << "\n";
-  writeToFile(forward<Tail>(tail)...);
-}
-
-void CodeWriter::pop() { // popしてそれを現在メモリが指すものをAレジスタが保持する
-  writeToFile("@SP", "M=M-1", "A=M");
-}
-
-void CodeWriter::push() { // データレジスタからstackにpush
-  writeToFile("@SP", "A=M", "M=D", "@SP", "M=M+1");
-}
-
 void CodeWriter::writeLabel(string label) {
-  char cs[40];
-  const char* cstr = label.c_str();
-  sprintf(cs, "(%s)", cstr);
+  string _label = getLabelInFunction(label);
+  string cs = getLOperation(_label);
   writeToFile(cs);
 }
 
 void CodeWriter::writeGoTo(string label) {
-  char cs[40];
-  const char* cstr = label.c_str();
-  sprintf(cs, "@%s", cstr);
+  string _label = getLabelInFunction(label);
+  string cs = getAOperation(_label);
   writeToFile(cs, "0;JMP");
 }
 
 void CodeWriter::writeIf(string label) {
-  char cs[40];
-  const char* cstr = label.c_str();
-  sprintf(cs, "@%s", cstr);
+  string _label = getLabelInFunction(label);
+  string cs = getAOperation(_label);
   pop();
   writeToFile("D=M", cs, "D;JNE");
+}
+
+void CodeWriter::writeInit() { // 単一ファイルの場合は除外する。
+  string oper = getAOperation(256);
+  writeToFile(oper, "D=A", "@SP", "M=D");
+  writeCall("Sys.init",0);
+}
+
+void CodeWriter::writeFunction(string functionName, int numLocals) {
+  string cs = getLOperation(functionName);
+  writeToFile(cs, "D=0");
+  for (int i=0; i<numLocals; i++) push();
+  currentFunctionName = functionName;
+}
+
+void CodeWriter::writeCall(string functionName, int numArgs) {
+  label returnLabel = getNewLabel(true);
+  writeToFile(returnLabel.from, "D=A");push();
+  writeToFile("@LCL", "D=M");push();
+  writeToFile("@ARG", "D=M");push();
+  writeToFile("@THIS", "D=M");push();
+  writeToFile("@THAT", "D=M");push();
+  writeToFile("@SP", "D=M", "@5", "D=D-A");
+  string oper = getAOperation(numArgs);
+  writeToFile(oper, "D=D-A", "@ARG", "M=D");
+  writeToFile("@SP", "D=M", "@LCL", "M=D");
+  string operFromSymbol = getAOperation(functionName);
+  writeToFile(operFromSymbol, "0;JMP", returnLabel.to);
+}
+
+void CodeWriter::writeReturn(){
+  writeToFile("@LCL", "D=M", "@R13", "M=D"); // @R13を一次変数Frameとして用いる
+  writeToFile("@5", "D=A", "@R13", "A=M-D", "D=M", "@R14", "M=D"); // 戻り値のアドレスを@R14に設定
+  
+  pop();
+  writeToFile("D=M", "@ARG", "A=M", "M=D"); // *ARGにpopしたデータを代入
+  writeToFile("@ARG", "D=M+1", "@SP", "M=D");  // SP=ARG+1
+
+  writeToFile("@R13", "AM=M-1", "D=M", "@THAT", "M=D");
+  writeToFile("@R13", "AM=M-1", "D=M", "@THIS", "M=D");
+  writeToFile("@R13", "AM=M-1", "D=M", "@ARG", "M=D");
+  writeToFile("@R13", "AM=M-1", "D=M", "@LCL", "M=D");
+  writeToFile("@R14","A=M","0;JMP");
 }

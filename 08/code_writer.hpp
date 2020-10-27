@@ -10,10 +10,11 @@ struct label{string from, to;};
 class CodeWriter {
   private:
     ofstream outputfile;
-    string vmFileName;
+    string vmFileName, currentFunctionName;
     CodeWriter(const CodeWriter&);
     CodeWriter& operator=(const CodeWriter&);
-    int label_num;
+    int labelNum=0;
+    int returnLabelNum=0;
 
     void writeToFile();
     template <class Head, class... Tail>
@@ -24,8 +25,11 @@ class CodeWriter {
     void writeCompOperation(string command);
     void pop();
     void push();
-    label getNewLabel();
-    string getAOperationFromAddress(int address, int bufSize=20);
+    label getNewLabel(bool IsReturnLabel=false);
+    string getAOperation(int address, int bufSize=20);
+    string getAOperation(string symbol, int bufSize=20);
+    string getLOperation(string label, int bufSize=20);
+    string getLabelInFunction(string label);
   public:
     CodeWriter(string fileName): outputfile(fileName, ofstream::app){}
     void setFileName(string vmFileName);
@@ -35,9 +39,9 @@ class CodeWriter {
     void writeLabel(string label);
     void writeGoTo(string label);
     void writeIf(string label);
-    // void writeCall(string functionName, int numArgs);
-    // void writeReturn();
-    // void writeFunction(string functionName, int numLocals);
+    void writeCall(string functionName, int numArgs);
+    void writeReturn();
+    void writeFunction(string functionName, int numLocals);
 };
 
 #endif // CODEWRITER_HPP

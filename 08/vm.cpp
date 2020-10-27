@@ -29,13 +29,14 @@ int main(int argc, char* argv[]) {
   ifstream ofs(output_file_name, ios::in);
   if(ofs) fs::remove(output_file_name);
   CodeWriter Cw(output_file_name);
+  // Cw.writeInit();
   Cw.setFileName(vmFileName);
   Parser Parser(&ifs);
   while(Parser.advance()) {
     int cType = Parser.commandType();
-    cout << cType << endl;
+    if (cType==0) continue;
     if (cType == C_RETURN) {
-      // Cw.writeReturn();
+      Cw.writeReturn();
       continue;
     } 
     if (cType == C_ARITHMETIC) {
@@ -56,16 +57,16 @@ int main(int argc, char* argv[]) {
       Cw.writeIf(label);
       continue;
     }
+    
+    string segment = Parser.arg1();
+    int index = Parser.arg2();
     if (cType==C_POP || cType==C_PUSH) {
-      string segment = Parser.arg1();
-      int index = Parser.arg2();
       Cw.writePushPop(cType, segment, index);
-    } 
-    // else if (cType == C_FUNCTION) {
-    //   Cw.writeFunction(segment, index);
-    // } else if (cType == C_CALL) {
-    //   Cw.writeCall(segment, index);
-    // }
+    } else if (cType == C_FUNCTION) {
+      Cw.writeFunction(segment, index);
+    } else if (cType == C_CALL) {
+      Cw.writeCall(segment, index);
+    }
   }
   return 0;
 }
