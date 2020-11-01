@@ -6,10 +6,6 @@
 #include "constants.hpp"
 using namespace std;
 
-Parser::Parser(ifstream *file) {
-  ifs = file;
-}
-
 void Parser::split_command(string &command) {
   if (command.size()<=1) {
     for (int i=0; i<4; i++) args[i]="";
@@ -34,7 +30,7 @@ void Parser::split_command(string &command) {
 bool Parser::advance() {
   string buf;
   bool moreCommand=false;
-  if (getline(*ifs, buf)) {
+  if (getline(ifs, buf)) {
     moreCommand = true;
     const string commentout("//");
     string::size_type pos = buf.find(commentout);
@@ -81,7 +77,6 @@ int Parser::arg2(){
       cType==C_CALL) {
     return stoi(args[2]);
   }
-  cout <<cType << endl;
   
   cerr << "invalid command type" << "\n";
   return 0;

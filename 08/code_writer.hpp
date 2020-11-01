@@ -3,7 +3,6 @@
 
 #include <string>
 #include <fstream>
-#include <stack>
 using namespace std;
 struct label{string from, to;};
 
