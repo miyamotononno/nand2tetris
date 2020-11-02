@@ -4,4 +4,7 @@
 *.gch
 .vscode/
 00/
+09/
 demo/
+*.jack
+*.xml
