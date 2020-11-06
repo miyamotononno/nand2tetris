@@ -4,12 +4,11 @@
 #include <filesystem>
 #include <regex>
 #include "compilation_engine.hpp"
-#include "constants.hpp"
 using namespace std;
 
 void BaseCompilation::writeSymbol() {
   P p = que.front();
-  if (p.second == TYPE_SYMBOL) {
+  if (p.second == TypeTerminalSymbol::Symbol) {
     que.pop();
     for (int i=0; i<2*indent; i++) *ofs << ' ';
     *ofs << "<symbol>" << ' ';
@@ -20,7 +19,7 @@ void BaseCompilation::writeSymbol() {
 
 void BaseCompilation::writeKeyword() {
   P p = que.front();
-  if (p.second == TYPE_KEYWORD) {
+  if (p.second == TypeTerminalSymbol::Keyword) {
     que.pop();
     for (int i=0; i<2*indent; i++) *ofs << ' ';
     *ofs << "<keyword>" << ' ';
@@ -31,7 +30,7 @@ void BaseCompilation::writeKeyword() {
 
 void BaseCompilation::writeIdentifier() {
   P p = que.front();
-  if (p.second == TYPE_IDENTIFIER) {
+  if (p.second == TypeTerminalSymbol::Identifier) {
     que.pop();
     for (int i=0; i<2*indent; i++) *ofs << ' ';
     *ofs << "<identifier>" << ' ';
@@ -42,7 +41,7 @@ void BaseCompilation::writeIdentifier() {
 
 void BaseCompilation::writeIntConst() {
   P p = que.front();
-  if (p.second == TYPE_INT_CONST) {
+  if (p.second == TypeTerminalSymbol::IntConst) {
     que.pop();
     for (int i=0; i<2*indent; i++) *ofs << ' ';
     *ofs << "<integerConstant>" << ' ';
@@ -53,7 +52,7 @@ void BaseCompilation::writeIntConst() {
 
 void BaseCompilation::writeSringConst() {
   P p = que.front();
-  if (p.second == TYPE_STRING_CONST) {
+  if (p.second == TypeTerminalSymbol::StringConst) {
     que.pop();
     for (int i=0; i<2*indent; i++) *ofs << ' ';
     *ofs << "<stringConstant>" << ' ';
@@ -64,8 +63,8 @@ void BaseCompilation::writeSringConst() {
 
 void BaseCompilation::writeType() {
   P p = que.front();
-  if (regex_match(p.first, regex(Pattern::TYPE_PATTERN))) {
-    if (p.second == TYPE_KEYWORD) writeKeyword();
+  if (regex_match(p.first, regex(RegexPattern::type))) {
+    if (p.second == TypeTerminalSymbol::Keyword) writeKeyword();
     else writeIdentifier();
   } else error("writeType");
 }
@@ -247,10 +246,10 @@ void TokenReturn::compile() {
 void TokenTerm::compile() {
   P p = que.front();
   CompilationEngine Ce(que, ofs, indent);
-  if (p.second == TYPE_INT_CONST) writeIntConst();
-  else if (p.second == TYPE_STRING_CONST) writeSringConst();
-  else if (p.second == TYPE_KEYWORD) writeKeyword();
-  else if (p.second == TYPE_IDENTIFIER) {
+  if (p.second == TypeTerminalSymbol::IntConst) writeIntConst();
+  else if (p.second == TypeTerminalSymbol::StringConst) writeSringConst();
+  else if (p.second == TypeTerminalSymbol::Keyword) writeKeyword();
+  else if (p.second == TypeTerminalSymbol::Identifier) {
     // varName, varName[exp], subroutinecall(先頭はidentifier)
     writeIdentifier();
     if (checkEndToken(currentToken())) return; // varName
@@ -259,7 +258,7 @@ void TokenTerm::compile() {
       Ce.compileExpression();
       writeSymbol(); // ]
     } else if (currentToken() == "(" || currentToken() == "."){
-      writeSubroutineCall(); // すでにsubroutineNameを上で使用しているため
+      writeSubroutineCall(false); // すでにsubroutineNameを上で使用しているため
     }
   }
   else {

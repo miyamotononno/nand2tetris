@@ -7,8 +7,9 @@
 #include <vector>
 #include <unordered_map>
 #include <queue>
+#include "constants.hpp"
 using namespace std;
-typedef pair<string, int> P;
+typedef pair<string, TypeTerminalSymbol> P;
 
 class JackTokenizer {
   private:

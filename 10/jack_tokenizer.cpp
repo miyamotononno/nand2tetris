@@ -6,7 +6,6 @@
 #include <queue>
 #include <sstream>
 #include "jack_tokenizer.hpp"
-#include "constants.hpp"
 using namespace std;
 
 JackTokenizer::JackTokenizer(ifstream *inputFile) {
@@ -25,22 +24,25 @@ JackTokenizer::JackTokenizer(ifstream *inputFile) {
 
 bool JackTokenizer::setTerminalSymbol(string &word, queue<P>& terminalSymbolQue) {
   if (word.size()==1 && SYMBOL_MAP[word[0]].size()>0) {
-    terminalSymbolQue.push(P(SYMBOL_MAP[word[0]], TYPE_SYMBOL));
-  } else if (regex_match(word, regex(Pattern::KEYWORD_PATTERN))) {
-    terminalSymbolQue.push(P(word, TYPE_KEYWORD));
-  } else if (regex_match(word, regex(Pattern::STRING_CONSTANT_PATTERN))) {
-    terminalSymbolQue.push(P(word, TYPE_STRING_CONST));
-  } else if (regex_match(word, regex(Pattern::INTEGER_CONSTANT_PATTERN))) {
-    terminalSymbolQue.push(P(word, TYPE_INT_CONST));
-  } else if (regex_match(word, regex(Pattern::IDENTIFIER_PATTERN))) {
-    terminalSymbolQue.push(P(word, TYPE_IDENTIFIER));
+    terminalSymbolQue.push(P(SYMBOL_MAP[word[0]], TypeTerminalSymbol::Symbol));
+  } else if (regex_match(word, regex(RegexPattern::keyword))) {
+    terminalSymbolQue.push(P(word, TypeTerminalSymbol::Keyword));
+  } else if (regex_match(word, regex(RegexPattern::stringConstant))) {
+    terminalSymbolQue.push(P(word, TypeTerminalSymbol::StringConst));
+  } else if (regex_match(word, regex(RegexPattern::integerConstant))) {
+    if (stoi(word) <0 || stoi(word) > 32767) {
+      cerr << "this number is too small or too large";
+      return false;
+    }
+    terminalSymbolQue.push(P(word, TypeTerminalSymbol::IntConst));
+  } else if (regex_match(word, regex(RegexPattern::identifier))) {
+    terminalSymbolQue.push(P(word, TypeTerminalSymbol::Identifier));
   } else return false;
   return true;
 }
 
 bool JackTokenizer::splitTokens(string &word, queue<P>& terminalSymbolQue) { // 再帰的に行う
   bool ok = true;
-  P terminalSymbol;
   if (setTerminalSymbol(word, terminalSymbolQue)) return true;
   else {
     smatch m;
@@ -48,7 +50,7 @@ bool JackTokenizer::splitTokens(string &word, queue<P>& terminalSymbolQue) { // 
     for (char c: word) {
       if (SYMBOL_MAP[c].size()>0) {
         setTerminalSymbol(newWord, terminalSymbolQue);
-        terminalSymbolQue.push(P(SYMBOL_MAP[c], TYPE_SYMBOL));
+        terminalSymbolQue.push(P(SYMBOL_MAP[c], TypeTerminalSymbol::Symbol));
         newWord="";
       } else newWord+=c;
     }
@@ -90,7 +92,7 @@ bool JackTokenizer::advance(queue<P>& terminalSymbolQue) {
           string endStringConstant= str.substr(0, pos);
           InDoublequote = false;
           stringConstant+=endStringConstant;
-          terminalSymbolQue.push(P(stringConstant, TYPE_STRING_CONST));
+          terminalSymbolQue.push(P(stringConstant, TypeTerminalSymbol::StringConst));
           string tokens = str.substr(pos+1);
           splitTokens(tokens, terminalSymbolQue);
         }

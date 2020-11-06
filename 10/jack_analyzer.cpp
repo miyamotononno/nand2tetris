@@ -5,7 +5,6 @@
 #include <queue>
 #include "jack_tokenizer.hpp"
 #include "compilation_engine.hpp"
-#include "constants.hpp"
 using namespace std;
 
 string getOutputFileName(string path, bool jt_test) {

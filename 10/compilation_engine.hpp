@@ -8,7 +8,7 @@
 #include <fstream>
 #include "constants.hpp"
 using namespace std;
-typedef pair<string, int> P;
+typedef pair<string, TypeTerminalSymbol> P;
 
 class BaseCompilation {
   public:
@@ -25,7 +25,7 @@ class BaseCompilation {
     void writeSringConst();
     void writeType();
     string currentToken();
-    void writeSubroutineCall(bool initalToken=true); // subroutinecallに関してはタグをつけないのでここに書く
+    void writeSubroutineCall(bool initalToken=true); // subroutine callに関してはタグをつけないのでここで定義
   public:
     BaseCompilation(string className, queue<P>& terminalSymbolQue, ofstream *output_file, int _indent)
     :que(terminalSymbolQue){
@@ -50,7 +50,6 @@ inline void BaseCompilation::error(string currentFunctionName) {
   cerr << name << "\n";
   cerr << currentToken() << "\n";
   cerr << currentFunctionName << "\n";
-  cerr << "\n";
 }
 
 inline BaseCompilation::~BaseCompilation() {
@@ -86,7 +85,7 @@ class TokenSubroutine: public BaseCompilation {
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
     static bool checkInitalToken(string token) {
-      return token == "constructor" || token == "function" || token == "method" || token == "void";
+      return (token == "constructor" || token == "function" || token == "method" || token == "void");
     }
 };
 
@@ -103,7 +102,7 @@ class TokenParameterList: public BaseCompilation {
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
     static bool checkInitalToken(string token) {
-      return regex_match(token, regex(Pattern::VAR_NAME_PATTERN));
+      return regex_match(token, regex(RegexPattern::identifier));
     }
 };
 
@@ -123,7 +122,8 @@ class TokenStatements: public BaseCompilation {
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
     static bool checkInitalToken(string token) {
-      return token == "let" || token == "if" || token == "while" || token == "do" || token == "return";
+      return (token == "let" || token == "if" || token == "while"
+           || token == "do" || token == "return");
     }
 };
 
@@ -182,11 +182,11 @@ class TokenTerm: public BaseCompilation {
     TokenTerm(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitialToken(P p) { // ToDo change!
-      if (p.second == TYPE_INT_CONST) return true;
-      if (p.second == TYPE_STRING_CONST) return true;
-      if (p.second == TYPE_KEYWORD) return true;
-      if (p.second == TYPE_IDENTIFIER) return true;
+    static bool checkInitialToken(P p) { // ToDo: change!
+      if (p.second == TypeTerminalSymbol::IntConst) return true;
+      if (p.second == TypeTerminalSymbol::StringConst) return true;
+      if (p.second == TypeTerminalSymbol::Keyword) return true;
+      if (p.second == TypeTerminalSymbol::Identifier) return true;
       if (p.first == "(" || p.first == "-" || p.first == "~") return true;
       return false;
     }
