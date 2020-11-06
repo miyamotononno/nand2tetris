@@ -20,7 +20,6 @@ class JackTokenizer {
   public:
     JackTokenizer(ifstream *inputFile);
     bool advance(queue<P>& terminalSymbolQue);
-    int tokenType;
 };
 
 #endif // JACK_TOKENIZER_HPP

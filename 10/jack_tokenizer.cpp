@@ -60,7 +60,7 @@ bool JackTokenizer::splitTokens(string &word, queue<P>& terminalSymbolQue) { // 
 bool JackTokenizer::advance(queue<P>& terminalSymbolQue) {
   bool moreTokens=false;
   string tmp;
-  if (getline(*ifs, tmp)) {
+  while (getline(*ifs, tmp)) {
     moreTokens = true;
     stringstream ss;
     string stringConstant, str;
