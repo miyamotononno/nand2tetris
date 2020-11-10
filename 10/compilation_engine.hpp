@@ -64,7 +64,7 @@ class TokenClass: public BaseCompilation {
     TokenClass(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return token == "class";
     }
 };
@@ -74,7 +74,7 @@ class TokenClassVarDec: public BaseCompilation {
     TokenClassVarDec(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return token == "static" || token == "field";
     }
 };
@@ -84,7 +84,7 @@ class TokenSubroutine: public BaseCompilation {
     TokenSubroutine(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return (token == "constructor" || token == "function" || token == "method" || token == "void");
     }
 };
@@ -101,7 +101,7 @@ class TokenParameterList: public BaseCompilation {
     TokenParameterList(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return regex_match(token, regex(RegexPattern::identifier));
     }
 };
@@ -111,7 +111,7 @@ class TokenVarDec: public BaseCompilation {
     TokenVarDec(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return token == "var";
     }
 };
@@ -121,7 +121,7 @@ class TokenStatements: public BaseCompilation {
     TokenStatements(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return (token == "let" || token == "if" || token == "while"
            || token == "do" || token == "return");
     }
@@ -132,7 +132,7 @@ class TokenDo: public BaseCompilation {
     TokenDo(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return token == "do";
     }
 };
@@ -142,7 +142,7 @@ class TokenLet: public BaseCompilation {
     TokenLet(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return token == "let";
     }
 };
@@ -152,7 +152,7 @@ class TokenWhile: public BaseCompilation {
     TokenWhile(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return token == "while";
     }
 };
@@ -162,7 +162,7 @@ class TokenReturn: public BaseCompilation {
     TokenReturn(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return token == "return";
     }
 };
@@ -172,7 +172,7 @@ class TokenIf: public BaseCompilation {
     TokenIf(string name, queue<P>& terminalSymbolQue, ofstream *output_file, int indent):
     BaseCompilation(name, terminalSymbolQue, output_file, indent){}
     void compile();
-    static bool checkInitalToken(string token) {
+    static bool checkInitialToken(string token) {
       return token == "if";
     }
 };

@@ -88,12 +88,12 @@ void TokenClass::compile(){
   int que_size = que.size();
   CompilationEngine Ce(que, ofs, indent);
   while (true) {
-   if (TokenClassVarDec::checkInitalToken(currentToken())){
+   if (TokenClassVarDec::checkInitialToken(currentToken())){
       Ce.compileClassVarDec();
     } else break; 
   }
   while (true) {
-   if (TokenSubroutine::checkInitalToken(currentToken())){
+   if (TokenSubroutine::checkInitialToken(currentToken())){
       Ce.compileSubroutine();
     } else break; 
   }
@@ -134,7 +134,7 @@ void TokenSubroutineBody::compile() {
   writeSymbol(); // {
   CompilationEngine Ce(que, ofs, indent);
   while (true) {
-    if (!TokenVarDec::checkInitalToken(currentToken())) break;
+    if (!TokenVarDec::checkInitialToken(currentToken())) break;
     Ce.compileVarDec();
   }
   Ce.compileStatements();
@@ -142,7 +142,7 @@ void TokenSubroutineBody::compile() {
 }
 
 void TokenParameterList::compile() {
-  if (!checkInitalToken(currentToken())) return;
+  if (!checkInitialToken(currentToken())) return;
   writeType();
   writeIdentifier();
   while(true) {
@@ -177,11 +177,11 @@ void TokenStatements::compile() {
   string keyword;
   while(true) {
     keyword = currentToken();
-    if (TokenDo::checkInitalToken(keyword)) Ce.compileDo();
-    else if (TokenLet::checkInitalToken(keyword)) Ce.compileLet();
-    else if (TokenWhile::checkInitalToken(keyword)) Ce.compileWhile();
-    else if (TokenIf::checkInitalToken(keyword)) Ce.compileIf();
-    else if (TokenReturn::checkInitalToken(keyword)) Ce.compileReturn();
+    if (TokenDo::checkInitialToken(keyword)) Ce.compileDo();
+    else if (TokenLet::checkInitialToken(keyword)) Ce.compileLet();
+    else if (TokenWhile::checkInitialToken(keyword)) Ce.compileWhile();
+    else if (TokenIf::checkInitialToken(keyword)) Ce.compileIf();
+    else if (TokenReturn::checkInitialToken(keyword)) Ce.compileReturn();
     else break;
   }
 }

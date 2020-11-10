@@ -5,6 +5,10 @@
 .vscode/
 00/
 09/
+11/Average/
+11/ConvertToBin/
+11/Square/
+11/Seven/
 demo/
 *.jack
 *.xml
