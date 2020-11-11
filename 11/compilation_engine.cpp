@@ -1,8 +1,3 @@
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <regex>
 #include "compilation_engine.hpp"
 using namespace std;
 
@@ -193,9 +188,7 @@ int CompilationEngine::compileVarDec() {
 }
 
 void CompilationEngine::compileStatements() {
-  string keyword;
   while(true) {
-    keyword = currentToken();
     if (checkInitialToken("doStatement")) compileDo();
     else if (checkInitialToken("letStatement")) compileLet();
     else if (checkInitialToken("whileStatement")) compileWhile();
@@ -207,9 +200,9 @@ void CompilationEngine::compileStatements() {
 
 void CompilationEngine::compileDo() {
   popKeyword(); // do
-
   // 以下subroutine callをしていることに注意
   string name = popIdentifier(); // 1. srName 2. srName or className
+  int index = indexOf(name);
   IdentifierAttribute kind = kindOf(name);
   if (currentToken() == ".") { // srName or className
     name+=popSymbol(); // .
@@ -221,14 +214,15 @@ void CompilationEngine::compileDo() {
       writeCall(name, nArg);
     } else { // そのクラスのfunction or constructor
       if (kind==IdentifierAttribute::Arg) {
-        writePush(Segment::Arg, indexOf(name));
+        writePush(Segment::Arg, index);
       } else if (kind == IdentifierAttribute::Field) {
-        writePush(Segment::This, indexOf(name));
+        writePush(Segment::This, index);
       } else if (kind == IdentifierAttribute::Static) {
-        writePush(Segment::Static, indexOf(name));
-      } else { // var
-        writePush(Segment::Local, indexOf(name));
+        writePush(Segment::Static, index);
+      } else if (kind == IdentifierAttribute::Var) { // var
+        writePush(Segment::Local, index);
       }
+      popSymbol(); // (
       int nArg = compileExpressionList();
       popSymbol(); // )
       writeCall(name, nArg+1);
@@ -241,7 +235,6 @@ void CompilationEngine::compileDo() {
     name = currentClassName+'.'+name;
     writeCall(name, nArg+1);
   }
-
   popSymbol(); // ;
   writePop(Segment::Temp, 0);
 }
@@ -265,7 +258,7 @@ void CompilationEngine::compileLet() {
       writePush(Segment::This, index);
     } else if (kind == IdentifierAttribute::Static) {
       writePush(Segment::Static, index);
-    } else { // var
+    } else if (kind == IdentifierAttribute::Var) {
       writePush(Segment::Local, index);
     }
     writeArithmetic(Command::Add);
@@ -288,7 +281,7 @@ void CompilationEngine::compileLet() {
       writePop(Segment::This, index);
     } else if (kind == IdentifierAttribute::Static) {
       writePop(Segment::Static, index);
-    } else { // var
+    } else if (kind == IdentifierAttribute::Var){
       writePop(Segment::Local, index);
     } 
   }
@@ -322,9 +315,9 @@ void CompilationEngine::compileIf(){
   popSymbol();
   compileStatements(); // if文の中身
   popSymbol();
-  string endLabel = getNewLabel();
-  writeGoto(endLabel);
   if (currentToken() == "else") {
+    string endLabel = getNewLabel();
+    writeGoto(endLabel);
     writeLabel(elseLabel);
     popKeyword();
     popSymbol();
@@ -372,6 +365,7 @@ void CompilationEngine::compileTerm() {
   }
   else if (p.second == TypeTerminalSymbol::Identifier) {
     string name = popIdentifier();
+    int index = indexOf(name);
     if (checkEndTermToken()) return; // varName
     if (currentToken() == "[") { // [ exp ]
       popSymbol(); // [
@@ -381,10 +375,10 @@ void CompilationEngine::compileTerm() {
       writePop(Segment::Pointer, 1);
       writePush(Segment::That, 0);
     } else if (currentToken() == "(" || currentToken() == "."){
-      IdentifierAttribute kind = kindOf(name);
       if (currentToken() == ".") { // srName or className
         name+=popSymbol(); // .
         name+=popIdentifier(); // srName
+        IdentifierAttribute kind = kindOf(name);
         if (kind == IdentifierAttribute::None) { // 他クラスのsubroutine
           popSymbol(); // (
           int nArg = compileExpressionList();
@@ -392,13 +386,13 @@ void CompilationEngine::compileTerm() {
           writeCall(name, nArg);
         } else { // そのクラスのfunction or constructor
           if (kind==IdentifierAttribute::Arg) {
-            writePush(Segment::Arg, indexOf(name));
+            writePush(Segment::Arg, index);
           } else if (kind == IdentifierAttribute::Field) {
-            writePush(Segment::This, indexOf(name));
+            writePush(Segment::This, index);
           } else if (kind == IdentifierAttribute::Static) {
-            writePush(Segment::Static, indexOf(name));
-          } else { // var
-            writePush(Segment::Local, indexOf(name));
+            writePush(Segment::Static, index);
+          } else if (kind == IdentifierAttribute::Var){ // var
+            writePush(Segment::Local, index);
           }
           int nArg = compileExpressionList();
           popSymbol(); // )

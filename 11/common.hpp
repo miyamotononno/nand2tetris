@@ -1,5 +1,7 @@
-#ifndef CONSTANTS_HPP
-#define CONSTANTS_HPP
+#ifndef COMMON_HPP
+#define COMMON_HPP
+
+#include <string>
 
 using namespace std;
 
@@ -33,4 +35,4 @@ struct Identifier {
   int index;
 };
 
-#endif // CONSTANTS_HPP
+#endif // COMMON_HPP

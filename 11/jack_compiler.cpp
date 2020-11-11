@@ -1,4 +1,3 @@
-#include <string>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -78,7 +77,7 @@ int main(int argc, char* argv[]) {
       string outputFileName = getOutputFileName(fileName);
       ifstream ofs(outputFileName, ios::in);
       if(ofs) filesystem::remove(outputFileName);
-      cout << outputFileName << endl;
+      cout << "========== "<< outputFileName << "========== "<< endl;
       CompilationEngine ce(terminalSymbolQue, outputFileName);
       ce.compileClass();
     }

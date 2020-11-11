@@ -1,11 +1,10 @@
 #ifndef JACK_TOKENIZER_HPP
 #define JACK_TOKENIZER_HPP
 
-#include <string>
 #include <fstream>
 #include <unordered_map>
 #include <queue>
-#include "constants.hpp"
+#include "common.hpp"
 using namespace std;
 typedef pair<string, TypeTerminalSymbol> P;
 

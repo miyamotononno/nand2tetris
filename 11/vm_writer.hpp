@@ -1,10 +1,9 @@
 #ifndef VM_WRITER_HPP
 #define VM_WRITER_HPP
 
-#include <string>
 #include <fstream>
 #include <unordered_map>
-#include "constants.hpp"
+#include "common.hpp"
 using namespace std;
 
 

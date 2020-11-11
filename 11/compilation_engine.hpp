@@ -1,12 +1,11 @@
 #ifndef COMPILATION_ENGINE_HPP
 #define COMPILATION_ENGINE_HPP
 
-#include <string>
 #include <iostream>
 #include <queue>
 #include <regex>
 #include <fstream>
-#include "constants.hpp"
+#include "common.hpp"
 #include "symbol_table.hpp"
 #include "vm_writer.hpp"
 using namespace std;
